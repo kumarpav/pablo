@@ -136,6 +136,21 @@
   .snap-fail-flash { position: absolute; top: 0; left: 0; right: 0; bottom: 22px; background: rgba(231,76,60,0.35); border-radius: 7px; pointer-events: none; animation: sfade 0.55s ease-out forwards; }
   @keyframes sfade { from{opacity:1;}to{opacity:0;} }
 
+  /* ── Pablo announcement ── */
+  .pablo-blast { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 250; pointer-events: none; opacity: 0; }
+  .pablo-blast.show { animation: pablo-blast 3.2s ease forwards; }
+  @keyframes pablo-blast {
+    0%   { opacity: 0; transform: scale(0.4); }
+    12%  { opacity: 1; transform: scale(1.08); }
+    20%  { transform: scale(1); }
+    72%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.96); }
+  }
+  .pablo-card { background: linear-gradient(145deg, #b71c1c, #e53935); border: 3px solid #f0c040; border-radius: 22px; padding: 1.75rem 2.75rem; text-align: center; box-shadow: 0 0 80px rgba(231,57,53,0.7), 0 0 0 8px rgba(240,192,64,0.15); }
+  .pablo-caller { font-size: 1.1rem; color: rgba(255,255,255,0.8); margin-bottom: 0.3rem; font-weight: 600; }
+  .pablo-word { font-size: 4rem; font-weight: 900; color: #f0c040; letter-spacing: -2px; line-height: 1; text-shadow: 0 0 30px rgba(240,192,64,0.6); }
+  .pablo-sub { font-size: 0.95rem; color: rgba(255,255,255,0.75); margin-top: 0.6rem; letter-spacing: 0.5px; }
+
   /* ── Rules overlay ── */
   .rules-modal { background: #2d5a27; border-radius: 16px; padding: 1.5rem 1.75rem 1.75rem; max-width: 480px; width: 93%; border: 1px solid rgba(255,255,255,0.18); max-height: 88vh; display: flex; flex-direction: column; }
   .rules-modal h3 { text-align: center; font-size: 1.15rem; margin-bottom: 1rem; }
@@ -338,6 +353,13 @@
   </div>
   <div class="overlay" id="special-overlay"><div class="modal" id="special-modal"></div></div>
   <div class="overlay" id="round-end-overlay"><div class="modal" id="round-end-modal"></div></div>
+  <div class="pablo-blast" id="pablo-blast">
+    <div class="pablo-card">
+      <div class="pablo-caller" id="pablo-blast-name"></div>
+      <div class="pablo-word">PABLO!</div>
+      <div class="pablo-sub">⚠ One round remaining</div>
+    </div>
+  </div>
   <div class="toast" id="toast"></div>
   <div class="snap-banner" id="snap-banner"></div>
 </div>
@@ -432,7 +454,11 @@ function switchRulesTab(name) {
 socket.on('player_left', ({ name }) => { showToast(`${name} left the game`); });
 
 socket.on('pablo_called', ({ playerName }) => {
-  showToast(`${playerName} called Pablo! One last turn each.`);
+  const el = document.getElementById('pablo-blast');
+  document.getElementById('pablo-blast-name').textContent = playerName + ' called';
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
 });
 
 socket.on('snap_result', ({ playerName, card, success, penalty }) => {
