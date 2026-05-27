@@ -136,6 +136,27 @@
   .snap-fail-flash { position: absolute; top: 0; left: 0; right: 0; bottom: 22px; background: rgba(231,76,60,0.35); border-radius: 7px; pointer-events: none; animation: sfade 0.55s ease-out forwards; }
   @keyframes sfade { from{opacity:1;}to{opacity:0;} }
 
+  /* ── Rules overlay ── */
+  .rules-modal { background: #2d5a27; border-radius: 16px; padding: 1.5rem 1.75rem 1.75rem; max-width: 480px; width: 93%; border: 1px solid rgba(255,255,255,0.18); max-height: 88vh; display: flex; flex-direction: column; }
+  .rules-modal h3 { text-align: center; font-size: 1.15rem; margin-bottom: 1rem; }
+  .rules-tabs { display: flex; gap: 0.35rem; margin-bottom: 1rem; background: rgba(0,0,0,0.2); border-radius: 9px; padding: 0.3rem; }
+  .rules-tab { flex: 1; background: transparent; border: none; color: rgba(255,255,255,0.55); border-radius: 6px; padding: 0.45rem 0.3rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .rules-tab.active { background: rgba(255,255,255,0.15); color: #fff; }
+  .rules-content { overflow-y: auto; flex: 1; padding-right: 0.2rem; font-size: 0.84rem; color: rgba(255,255,255,0.82); line-height: 1.55; }
+  .rules-content h4 { color: #f0c040; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin: 1rem 0 0.35rem; }
+  .rules-content h4:first-child { margin-top: 0; }
+  .rules-content p { margin-bottom: 0.5rem; }
+  .rules-content ul { padding-left: 1.1rem; margin-bottom: 0.5rem; }
+  .rules-content li { margin-bottom: 0.25rem; }
+  .cv-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.3rem 1rem; margin-bottom: 0.5rem; }
+  .cv-row { display: flex; justify-content: space-between; background: rgba(0,0,0,0.18); border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.82rem; }
+  .cv-label { color: rgba(255,255,255,0.6); }
+  .cv-val { font-weight: 700; color: #fff; }
+  .cv-val.neg { color: #66d9a0; }
+  .cv-val.high { color: #ff8a80; }
+  .tip-card { background: rgba(0,0,0,0.18); border-radius: 8px; padding: 0.55rem 0.75rem; margin-bottom: 0.4rem; display: flex; gap: 0.6rem; align-items: flex-start; }
+  .tip-icon { font-size: 1rem; line-height: 1.4; flex-shrink: 0; }
+
   /* ── Waiting for host ── */
   .host-only-msg { text-align: center; color: rgba(255,255,255,0.45); font-size: 0.82rem; margin-top: 0.5rem; }
 </style>
@@ -225,6 +246,92 @@
       <div class="hand-row" id="hand-row"></div>
     </div>
   </div>
+  <div class="overlay" id="rules-overlay" style="z-index:150;overflow-y:auto;align-items:flex-start;padding:1rem 0;">
+    <div class="rules-modal">
+      <h3>How to Play Pablo</h3>
+      <div class="rules-tabs">
+        <button class="rules-tab active" onclick="switchRulesTab('cheatsheet')">Cheat Sheet</button>
+        <button class="rules-tab" onclick="switchRulesTab('fullrules')">Full Rules</button>
+        <button class="rules-tab" onclick="switchRulesTab('strategy')">Strategy</button>
+      </div>
+
+      <!-- Cheat Sheet -->
+      <div class="rules-content" id="tab-cheatsheet">
+        <h4>Goal</h4>
+        <p>Have the <strong>lowest hand value</strong> each round. First player to reach the score limit <strong>loses</strong>.</p>
+        <h4>Card Values</h4>
+        <div class="cv-grid">
+          <div class="cv-row"><span class="cv-label">Ace</span><span class="cv-val">1</span></div>
+          <div class="cv-row"><span class="cv-label">2 – 10</span><span class="cv-val">face value</span></div>
+          <div class="cv-row"><span class="cv-label">Jack</span><span class="cv-val high">11</span></div>
+          <div class="cv-row"><span class="cv-label">Queen</span><span class="cv-val high">12</span></div>
+          <div class="cv-row"><span class="cv-label">K ♥ ♦ (red)</span><span class="cv-val neg">−1</span></div>
+          <div class="cv-row"><span class="cv-label">K ♠ ♣ (black)</span><span class="cv-val high">13</span></div>
+        </div>
+        <h4>Special Cards</h4>
+        <div class="cv-grid">
+          <div class="cv-row"><span class="cv-label">7 or 8</span><span class="cv-val">Peek own card</span></div>
+          <div class="cv-row"><span class="cv-label">9 or 10</span><span class="cv-val">Spy opponent</span></div>
+        </div>
+        <h4>Your Turn</h4>
+        <p>Draw from deck → <strong>swap</strong> it with a hand card, or <strong>discard</strong> it. Special cards trigger their ability when discarded.</p>
+        <h4>Snapping</h4>
+        <p>Any time — if a card in your hand matches the top discard rank, snap it to remove it. Wrong snap = penalty card.<br><em>Desktop: press 1–4 &nbsp;|&nbsp; Mobile: swipe the card</em></p>
+        <h4>Calling Pablo</h4>
+        <p>On your turn, call Pablo if you think you have the lowest hand. Everyone else gets one more turn. Wrong call = +10 pts penalty.</p>
+      </div>
+
+      <!-- Full Rules -->
+      <div class="rules-content" id="tab-fullrules" style="display:none">
+        <h4>Setup</h4>
+        <p>Each player is dealt 4 cards. At the start, cards at positions 1 and 4 are briefly revealed for 3 seconds — memorise them. Positions 2 and 3 stay hidden.</p>
+        <h4>Taking a Turn</h4>
+        <ul>
+          <li>Draw the top card from the deck.</li>
+          <li>Either <strong>swap</strong> it with one of your hand cards (the old card goes to discard) or <strong>discard</strong> it directly.</li>
+          <li>If you discard a special card (7, 8, 9, or 10) you must use its ability instead of ending your turn immediately.</li>
+        </ul>
+        <h4>Special Abilities</h4>
+        <ul>
+          <li><strong>7 / 8 — Peek:</strong> Choose one of your own cards to reveal for 3 seconds.</li>
+          <li><strong>9 / 10 — Spy:</strong> Choose any one of an opponent's cards to reveal for 3 seconds.</li>
+          <li>You may skip a special ability if you don't want to use it.</li>
+        </ul>
+        <h4>Snapping</h4>
+        <p>At any point in the game (even on someone else's turn), you can snap one of your own cards if its rank matches the current top discard card.</p>
+        <ul>
+          <li><strong>Success:</strong> The card is discarded and removed from your hand.</li>
+          <li><strong>Failure:</strong> You draw a penalty card from the deck, added to your hand.</li>
+        </ul>
+        <h4>Calling Pablo</h4>
+        <p>On your turn, before drawing, you can call "Pablo" if you believe your hand is the lowest. This ends your turn and triggers the last round — every other player gets exactly one more turn.</p>
+        <ul>
+          <li>If you have the lowest hand: you win the round with 0 points.</li>
+          <li>If someone else ties or beats you: you pay your hand total <strong>plus a 10-point penalty</strong>.</li>
+        </ul>
+        <h4>Scoring a Round</h4>
+        <p>Count the total value of all cards in your hand. The player with the lowest total adds 0 points. Everyone else adds their hand total to their cumulative score.</p>
+        <h4>Winning the Game</h4>
+        <p>Play continues over multiple rounds. The first player to reach or exceed the score limit is eliminated — everyone else wins.</p>
+        <h4>Deck Running Out</h4>
+        <p>If the deck empties, all discards except the top card are reshuffled into a new deck.</p>
+      </div>
+
+      <!-- Strategy -->
+      <div class="rules-content" id="tab-strategy" style="display:none">
+        <div class="tip-card"><span class="tip-icon">🧠</span><span>Memorise your starting cards (positions 1 & 4). You see them once — track them mentally throughout the round.</span></div>
+        <div class="tip-card"><span class="tip-icon">👀</span><span>When you swap a card in, you see it briefly. Use that window to decide whether it's worth keeping.</span></div>
+        <div class="tip-card"><span class="tip-icon">♥</span><span>Red Kings (♥♦) are worth <strong>−1 point</strong> — the best card in the game. Never swap them out unless you have no choice.</span></div>
+        <div class="tip-card"><span class="tip-icon">🃏</span><span>Black Kings (13 pts), Queens (12), and Jacks (11) are your biggest liabilities. Prioritise replacing them early.</span></div>
+        <div class="tip-card"><span class="tip-icon">⚡</span><span>Snap aggressively. A wrong snap is just one penalty card — the upside of removing a high card from your hand is usually worth the risk.</span></div>
+        <div class="tip-card"><span class="tip-icon">🔍</span><span>Use Spy (9/10) before calling Pablo to confirm an opponent has high cards — it makes your Pablo call much safer.</span></div>
+        <div class="tip-card"><span class="tip-icon">⏳</span><span>Don't call Pablo too early. Everyone gets one more turn after you do — a player sitting on a low hand will beat you.</span></div>
+        <div class="tip-card"><span class="tip-icon">🎯</span><span>Watch the discard pile rank. If you know a card in your hand matches, be ready to snap the instant it appears.</span></div>
+      </div>
+
+      <button class="btn btn-yellow" style="margin-top:1.25rem;width:100%" onclick="document.getElementById('rules-overlay').classList.remove('active')">Got it — let's play!</button>
+    </div>
+  </div>
   <div class="overlay" id="special-overlay"><div class="modal" id="special-modal"></div></div>
   <div class="overlay" id="round-end-overlay"><div class="modal" id="round-end-modal"></div></div>
   <div class="toast" id="toast"></div>
@@ -302,7 +409,20 @@ socket.on('error', (msg) => {
   setError('lobby-error', msg);
 });
 
-socket.on('game_started', () => { showScreen('game-screen'); });
+socket.on('game_started', () => {
+  showScreen('game-screen');
+  switchRulesTab('cheatsheet');
+  document.getElementById('rules-overlay').classList.add('active');
+});
+
+function switchRulesTab(name) {
+  ['cheatsheet','fullrules','strategy'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.rules-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', ['cheatsheet','fullrules','strategy'][i] === name);
+  });
+}
 
 socket.on('player_left', ({ name }) => { showToast(`${name} left the game`); });
 
