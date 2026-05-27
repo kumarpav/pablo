@@ -80,6 +80,8 @@
   .status-bar { text-align: center; padding: 0.35rem; font-size: 0.78rem; color: rgba(255,255,255,0.6); min-height: 1.8rem; }
   .drawn-area { min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.2rem; }
   .drawn-label { font-size: 0.72rem; color: rgba(255,255,255,0.6); }
+  @keyframes card-deciding { 0%,100%{transform:translateY(0);box-shadow:0 0 0 0 rgba(240,192,64,0.5);} 50%{transform:translateY(-5px);box-shadow:0 6px 18px rgba(240,192,64,0.25);} }
+  .card-deciding { animation: card-deciding 1.1s ease-in-out infinite; }
   .action-row { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; padding: 0.3rem; }
   .btn-sm { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.22); border-radius: 7px; padding: 0.35rem 0.8rem; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
   .btn-sm:hover { background: rgba(255,255,255,0.24); }
@@ -235,7 +237,6 @@ let myId = null;
 let myName = '';
 let isHost = false;
 let lastState = null;
-let swapOwn = null;
 
 socket.on('connect', () => { myId = socket.id; });
 
@@ -378,14 +379,17 @@ function renderGame(state) {
 
   // Drawn card
   const drawnArea = document.getElementById('drawn-area'); drawnArea.innerHTML = '';
-  if (state.drawnCard && !state.drawnCard.hidden) {
+  if (state.drawnCard && state.drawnCard.hasDrawn) {
+    const lbl = document.createElement('span'); lbl.className = 'drawn-label'; lbl.textContent = `${state.currentPlayerName} is deciding...`;
+    drawnArea.appendChild(lbl);
+    const el = buildFlipCard({ hidden: true }, false, null);
+    el.classList.add('card-deciding');
+    drawnArea.appendChild(el);
+  } else if (state.drawnCard && !state.drawnCard.hidden) {
     const lbl = document.createElement('span'); lbl.className = 'drawn-label'; lbl.textContent = 'Drawn:';
     drawnArea.appendChild(lbl);
     const el = buildFlipCard(state.drawnCard, true, null);
     drawnArea.appendChild(el);
-  } else if (state.drawnCard && state.drawnCard.hasDrawn) {
-    const lbl = document.createElement('span'); lbl.className = 'drawn-label'; lbl.textContent = `${state.currentPlayerName} drew a card`;
-    drawnArea.appendChild(lbl);
   }
 
   // Action buttons
@@ -434,17 +438,6 @@ function handleMyCardClick(idx) {
     document.getElementById('special-overlay').classList.remove('active');
     return;
   }
-  if (lastState.phase === 'special-swap') {
-    if (swapOwn === null) {
-      swapOwn = idx;
-      // highlight
-      document.querySelectorAll('#hand-row .card-slot').forEach((s,i) => {
-        s.style.outline = i === idx ? '2px solid #f0c040' : '';
-      });
-      document.getElementById('status-bar').textContent = 'Now choose an opponent card to swap with.';
-    }
-    return;
-  }
   if (lastState.phase === 'act' && lastState.drawnCard) {
     socket.emit('swap_card', { cardIdx: idx });
   }
@@ -469,23 +462,6 @@ function renderSpecialModal(state) {
     html += `</div><button class="btn-choice" style="margin-top:0.5rem;width:100%" onclick="socket.emit('special_cancel');document.getElementById('special-overlay').classList.remove('active')">Skip</button>`;
     modal.innerHTML = html;
     ov.classList.add('active');
-  } else if (sp.type === 'swap') {
-    swapOwn = null;
-    let html = `<h3>Swap (${sp.card.rank})</h3><p>Choose one of your cards, then an opponent's card to blind swap.</p>`;
-    html += `<p style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin-bottom:0.3rem">Your card:</p><div class="modal-choices">`;
-    state.players[state.myIdx].hand.forEach((card, j) => {
-      if (card) html += `<button class="btn-choice" id="so${j}" onclick="selectSwapOwn(${j})">#${j+1}</button>`;
-    });
-    html += `</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.55);margin:0.5rem 0 0.3rem">Opponent's card:</p><div class="modal-choices">`;
-    state.players.forEach((p, i) => {
-      if (p.isMe) return;
-      p.hand.forEach((card, ci) => {
-        if (card) html += `<button class="btn-choice" id="sop${i}_${ci}" onclick="doSwap(${i},${ci})">${p.name} #${ci+1}</button>`;
-      });
-    });
-    html += `</div><button class="btn-choice" style="margin-top:0.75rem;width:100%" onclick="socket.emit('special_cancel');document.getElementById('special-overlay').classList.remove('active')">Skip</button>`;
-    modal.innerHTML = html;
-    ov.classList.add('active');
   }
 }
 
@@ -494,19 +470,6 @@ function doSpy(pi, ci) {
   document.getElementById('special-overlay').classList.remove('active');
 }
 
-function selectSwapOwn(idx) {
-  swapOwn = idx;
-  document.querySelectorAll('[id^="so"]').forEach(el => el.classList.remove('selected'));
-  const el = document.getElementById(`so${idx}`);
-  if (el) el.classList.add('selected');
-}
-
-function doSwap(pi, ci) {
-  if (swapOwn === null) { showToast('Pick your card first'); return; }
-  socket.emit('special_swap', { myCardIdx: swapOwn, targetPlayerIdx: pi, targetCardIdx: ci });
-  document.getElementById('special-overlay').classList.remove('active');
-  swapOwn = null;
-}
 
 // ── Round end ─────────────────────────────────────────────────────────────────
 function renderRoundEnd(state) {

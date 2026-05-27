@@ -14,23 +14,23 @@ const SUITS = ['♠','♥','♦','♣'];
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const PEEK_MS = 3000;
 
-function cardValue(r) {
+function cardValue(r, s) {
   if (r === 'A') return 1;
-  if (r === 'J' || r === 'Q') return 0;
-  if (r === 'K') return 13;
+  if (r === 'J') return 11;
+  if (r === 'Q') return 12;
+  if (r === 'K') return isRed(s) ? -1 : 13;
   return parseInt(r);
 }
 function specialAbility(r) {
   if (r === '7' || r === '8') return 'peek';
   if (r === '9' || r === '10') return 'spy';
-  if (r === 'J' || r === 'Q') return 'swap';
   return null;
 }
 function isRed(s) { return s === '♥' || s === '♦'; }
 
 function createDeck() {
   const d = [];
-  for (const s of SUITS) for (const r of RANKS) d.push({ suit: s, rank: r, value: cardValue(r) });
+  for (const s of SUITS) for (const r of RANKS) d.push({ suit: s, rank: r, value: cardValue(r, s) });
   for (let i = d.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [d[i], d[j]] = [d[j], d[i]];
