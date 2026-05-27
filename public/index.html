@@ -270,8 +270,9 @@
         </div>
         <h4>Special Cards</h4>
         <div class="cv-grid">
-          <div class="cv-row"><span class="cv-label">7 or 8</span><span class="cv-val">Peek own card</span></div>
-          <div class="cv-row"><span class="cv-label">9 or 10</span><span class="cv-val">Spy opponent</span></div>
+          <div class="cv-row"><span class="cv-label">6</span><span class="cv-val">Peek own card</span></div>
+          <div class="cv-row"><span class="cv-label">7</span><span class="cv-val">Spy opponent</span></div>
+          <div class="cv-row"><span class="cv-label">8</span><span class="cv-val">Swap any 2 cards</span></div>
         </div>
         <h4>Your Turn</h4>
         <p>Draw from deck → <strong>swap</strong> it with a hand card, or <strong>discard</strong> it. Special cards trigger their ability when discarded.</p>
@@ -293,8 +294,9 @@
         </ul>
         <h4>Special Abilities</h4>
         <ul>
-          <li><strong>7 / 8 — Peek:</strong> Choose one of your own cards to reveal for 3 seconds.</li>
-          <li><strong>9 / 10 — Spy:</strong> Choose any one of an opponent's cards to reveal for 3 seconds.</li>
+          <li><strong>6 — Peek:</strong> Choose one of your own cards to reveal for 3 seconds.</li>
+          <li><strong>7 — Spy:</strong> Choose any one of an opponent's cards to reveal for 3 seconds.</li>
+          <li><strong>8 — Swap:</strong> Choose any two cards from any players and swap them blindly.</li>
           <li>You may skip a special ability if you don't want to use it.</li>
         </ul>
         <h4>Snapping</h4>
@@ -346,6 +348,7 @@ let myId = null;
 let myName = '';
 let isHost = false;
 let lastState = null;
+let swapSelA = null;
 
 socket.on('connect', () => { myId = socket.id; });
 
@@ -565,6 +568,10 @@ function handleMyCardClick(idx) {
     document.getElementById('special-overlay').classList.remove('active');
     return;
   }
+  if (lastState.phase === 'special-swap') {
+    selectSwapCard(lastState.myIdx, idx);
+    return;
+  }
   if (lastState.phase === 'act' && lastState.drawnCard) {
     socket.emit('swap_card', { cardIdx: idx });
   }
@@ -589,12 +596,41 @@ function renderSpecialModal(state) {
     html += `</div><button class="btn-choice" style="margin-top:0.5rem;width:100%" onclick="socket.emit('special_cancel');document.getElementById('special-overlay').classList.remove('active')">Skip</button>`;
     modal.innerHTML = html;
     ov.classList.add('active');
+  } else if (sp.type === 'swap') {
+    swapSelA = null;
+    let html = `<h3>Swap (${sp.card.rank})</h3><p id="swap-instruction">Choose any two cards to swap.</p>`;
+    state.players.forEach((p, pi) => {
+      html += `<p style="font-size:0.75rem;color:rgba(255,255,255,0.5);margin:0.5rem 0 0.2rem">${p.isMe ? 'You' : p.name}</p><div class="modal-choices">`;
+      p.hand.forEach((card, ci) => {
+        if (card) html += `<button class="btn-choice" id="sw${pi}_${ci}" onclick="selectSwapCard(${pi},${ci})">${p.isMe ? '#' + (ci+1) : '#' + (ci+1)}</button>`;
+      });
+      html += `</div>`;
+    });
+    html += `<button class="btn-choice" style="margin-top:0.75rem;width:100%" onclick="socket.emit('special_cancel');document.getElementById('special-overlay').classList.remove('active')">Skip</button>`;
+    modal.innerHTML = html;
+    ov.classList.add('active');
   }
 }
 
 function doSpy(pi, ci) {
   socket.emit('special_spy', { targetPlayerIdx: pi, cardIdx: ci });
   document.getElementById('special-overlay').classList.remove('active');
+}
+
+function selectSwapCard(pi, ci) {
+  if (swapSelA === null) {
+    swapSelA = { pi, ci };
+    document.querySelectorAll('[id^="sw"]').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById(`sw${pi}_${ci}`);
+    if (el) el.classList.add('selected');
+    const instr = document.getElementById('swap-instruction');
+    if (instr) instr.textContent = 'Now choose the second card to swap with.';
+  } else {
+    if (swapSelA.pi === pi && swapSelA.ci === ci) return;
+    socket.emit('special_swap', { playerIdxA: swapSelA.pi, cardIdxA: swapSelA.ci, playerIdxB: pi, cardIdxB: ci });
+    document.getElementById('special-overlay').classList.remove('active');
+    swapSelA = null;
+  }
 }
 
 

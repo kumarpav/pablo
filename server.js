@@ -22,8 +22,9 @@ function cardValue(r, s) {
   return parseInt(r);
 }
 function specialAbility(r) {
-  if (r === '7' || r === '8') return 'peek';
-  if (r === '9' || r === '10') return 'spy';
+  if (r === '6') return 'peek';
+  if (r === '7') return 'spy';
+  if (r === '8') return 'swap';
   return null;
 }
 function isRed(s) { return s === '♥' || s === '♦'; }
@@ -386,19 +387,20 @@ io.on('connection', (socket) => {
     endTurn(room);
   });
 
-  // Special: swap with opponent
-  socket.on('special_swap', ({ myCardIdx, targetPlayerIdx, targetCardIdx }) => {
+  // Special: swap any two cards
+  socket.on('special_swap', ({ playerIdxA, cardIdxA, playerIdxB, cardIdxB }) => {
     const code = socket.data.roomCode;
     const room = getRoom(code);
     if (!room) return;
     const g = room.game;
     const myIdx = room.players.findIndex(p => p.id === socket.id);
     if (myIdx !== g.currentPlayerIdx || g.phase !== 'special-swap') return;
-    const myCard = room.players[myIdx].hand[myCardIdx];
-    const theirCard = room.players[targetPlayerIdx].hand[targetCardIdx];
-    room.players[myIdx].hand[myCardIdx] = theirCard;
-    room.players[targetPlayerIdx].hand[targetCardIdx] = myCard;
-    room.players[myIdx].knownIndices.delete(myCardIdx);
+    const cardA = room.players[playerIdxA].hand[cardIdxA];
+    const cardB = room.players[playerIdxB].hand[cardIdxB];
+    room.players[playerIdxA].hand[cardIdxA] = cardB;
+    room.players[playerIdxB].hand[cardIdxB] = cardA;
+    room.players[playerIdxA].knownIndices.delete(cardIdxA);
+    room.players[playerIdxB].knownIndices.delete(cardIdxB);
     if (g.specialPending) g.discard.push(g.specialPending.card);
     g.specialPending = null;
     g.phase = 'draw';
