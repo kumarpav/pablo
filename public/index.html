@@ -201,7 +201,7 @@
     <h2>PABLO</h2>
     <span class="round-info" id="round-display">Round 1</span>
     <div class="top-right">
-      <span class="snap-hint">Snap: press 1–4</span>
+      <span class="snap-hint">Snap: 1–4 / swipe card</span>
       <button class="btn-pablo" id="pablo-btn" onclick="callPablo()" disabled>Call Pablo!</button>
     </div>
   </div>
@@ -409,7 +409,12 @@ function renderGame(state) {
       const slot = document.createElement('div'); slot.className = 'card-slot';
       const revealed = card && card.revealed;
       const idx = i;
-      const el = buildFlipCard(card, !!revealed, card ? () => handleMyCardClick(idx) : null);
+      const el = buildFlipCard(card, !!revealed, null);
+      if (card) {
+        el.style.cursor = 'pointer';
+        el.onclick = () => handleMyCardClick(idx);
+        addSnapSwipe(el, idx);
+      }
       slot.appendChild(el);
       const hk = document.createElement('div'); hk.className = 'hotkey'; hk.textContent = `[${i+1}]`;
       slot.appendChild(hk);
@@ -504,6 +509,26 @@ function renderRoundEnd(state) {
   }
   modal.innerHTML = html;
   document.getElementById('round-end-overlay').classList.add('active');
+}
+
+// ── Swipe snap (mobile) ───────────────────────────────────────────────────────
+function addSnapSwipe(el, cardIdx) {
+  let startX, startY, startTime, swiped = false;
+  el.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY; startTime = Date.now(); swiped = false;
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (startX === undefined) return;
+    const t = e.changedTouches[0];
+    const dist = Math.hypot(t.clientX - startX, t.clientY - startY);
+    if (dist > 40 && Date.now() - startTime < 400) {
+      swiped = true;
+      socket.emit('snap', { targetPlayerIdx: lastState.myIdx, cardIdx });
+    }
+    startX = undefined;
+  });
+  el.addEventListener('click', (e) => { if (swiped) { swiped = false; e.stopImmediatePropagation(); } }, true);
 }
 
 // ── Snap hotkeys ──────────────────────────────────────────────────────────────
