@@ -48,6 +48,8 @@
   .snap-hint { font-size: 0.68rem; color: rgba(255,255,255,0.4); }
   .btn-pablo { background: #e74c3c; color: #fff; border: none; border-radius: 7px; padding: 0.4rem 0.9rem; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
   .btn-pablo:disabled { opacity: 0.35; cursor: default; }
+  .btn-rules { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 7px; width: 2rem; height: 2rem; font-weight: 700; font-size: 0.9rem; cursor: pointer; line-height: 1; }
+  .btn-rules:hover { background: rgba(255,255,255,0.22); }
 
   /* ── Table ── */
   .table-area { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1rem 0; }
@@ -238,6 +240,7 @@
     <span class="round-info" id="round-display">Round 1</span>
     <div class="top-right">
       <span class="snap-hint">Snap: 1–4 / swipe card</span>
+      <button class="btn-rules" onclick="switchRulesTab('cheatsheet');document.getElementById('rules-overlay').classList.add('active')">?</button>
       <button class="btn-pablo" id="pablo-btn" onclick="callPablo()" disabled>Call Pablo!</button>
     </div>
   </div>
@@ -348,7 +351,7 @@
         <div class="tip-card"><span class="tip-icon">🎯</span><span>Watch the discard pile rank. If you know a card in your hand matches, be ready to snap the instant it appears.</span></div>
       </div>
 
-      <button class="btn btn-yellow" style="margin-top:1.25rem;width:100%" onclick="document.getElementById('rules-overlay').classList.remove('active')">Got it — let's play!</button>
+      <button class="btn btn-yellow" style="margin-top:1.25rem;width:100%" onclick="document.getElementById('rules-overlay').classList.remove('active')">Close</button>
     </div>
   </div>
   <div class="overlay" id="special-overlay"><div class="modal" id="special-modal"></div></div>
